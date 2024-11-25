@@ -20,7 +20,8 @@ namespace LS22ModAbgleich
 
         static void Main(string[] args)
         {
-            modPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"My Games\FarmingSimulator2022\mods\");
+            //modPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"My Games\FarmingSimulator2022\mods\");
+            modPath = ConfigurationManager.AppSettings["modFolderPath"];
             xmlUrl = ConfigurationManager.AppSettings["serverInfoXmlUrl"];
             // URL zu http://ServerIP:Port/mods
             modDownloadBase = ConfigurationManager.AppSettings["modBaseUrl"];
@@ -92,60 +93,39 @@ namespace LS22ModAbgleich
                 WriteYellowLine($"Der Server hat {modsToDownload.Count} neue/aktualisierte Mod(s). Sollen diese heruntergeladen werden?");
 
                 string antwort = null;
-                while (antwort != "ja" && antwort != "nein")
+                if (ConfigurationManager.AppSettings["alwaysSyncYes"] == "true")
                 {
-                    WriteYellowLine("Bitte antworten: ja/nein/auflisten");
-                    antwort = Console.ReadLine().ToLower();
-
-                    if (antwort == "ja")
+                    Download(modsToDownload);
+                    WriteYellowLine("Alle Mods heruntergeladen. Programm wird damit beendet. Bitte das Fenster von Hand schließen oder irgendeine Taste drücken.");
+                    Console.ReadKey();
+                }
+                else
+                {
+                    while (antwort != "ja" && antwort != "nein")
                     {
-                        using (WebClient webClient = new WebClient())
+                        WriteYellowLine("Bitte antworten: ja/nein/auflisten");
+                        antwort = Console.ReadLine().ToLower();
+
+                        if (antwort == "ja")
                         {
-                            int downloadStep = 1;
-                            foreach (var zipName in modsToDownload)
-                            {
-                                try
-                                {
-                                    Console.Write($"Lade herunter: {zipName}");
-                                    string webPath = $"{modDownloadBase}/{zipName}";
-                                    string localPath = $"{modPath}\\{zipName}";
-                                    webClient.DownloadFile(webPath, localPath);
-                                    Console.CursorLeft = 0;
-                                    Console.Write(new string(' ', Console.WindowWidth - 1));
-                                    Console.CursorLeft = 0;
-                                    Console.Write($"Heruntergeladen: {zipName} ({downloadStep}/{modsToDownload.Count})");
-                                    Console.WriteLine();
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.CursorLeft = 0;
-                                    Console.Write(new string(' ', Console.WindowWidth - 1));
-                                    Console.CursorLeft = 0;
-                                    Console.ForegroundColor = ConsoleColor.Red;
-                                    Console.Write($"FEHLER: {zipName} ({downloadStep}/{modsToDownload.Count})");
-                                    Console.ForegroundColor = defaultColor;
-                                    Console.WriteLine();
-                                }
 
-                                downloadStep++;
-                            }
+                            Download(modsToDownload);
+                            WriteYellowLine("Alle Mods heruntergeladen. Programm wird damit beendet. Bitte das Fenster von Hand schließen oder irgendeine Taste drücken.");
+                            Console.ReadKey();
+                            break;
                         }
-
-                        WriteYellowLine("Alle Mods heruntergeladen. Programm wird damit beendet. Bitte das Fenster von Hand schließen oder irgendeine Taste drücken.");
-                        Console.ReadKey();
-                        break;
-                    }
-                    else if(antwort == "nein")
-                    {
-                        WriteYellowLine("Es wurde nein gewählt. Programm wird damit beendet. Bitte das Fenster von Hand schließen oder irgendeine Taste drücken.");
-                        Console.ReadKey();
-                        break;
-                    }
-                    else if(antwort == "auflisten")
-                    {
-                        WriteYellowLine("Mods die heruntergeladen würden:");
-                        modsToDownload.ForEach(mod => Console.WriteLine(mod));
-                        WriteYellowLine("Sollen die Mods heruntergeladen werden?");
+                        else if (antwort == "nein")
+                        {
+                            WriteYellowLine("Es wurde nein gewählt. Programm wird damit beendet. Bitte das Fenster von Hand schließen oder irgendeine Taste drücken.");
+                            Console.ReadKey();
+                            break;
+                        }
+                        else if (antwort == "auflisten")
+                        {
+                            WriteYellowLine("Mods die heruntergeladen würden:");
+                            modsToDownload.ForEach(mod => Console.WriteLine(mod));
+                            WriteYellowLine("Sollen die Mods heruntergeladen werden?");
+                        }
                     }
                 }
             }
@@ -153,6 +133,10 @@ namespace LS22ModAbgleich
             {
                 WriteYellowLine("Alle Mods sind bereits aktuell. Programm wird damit beendet. Bitte das Fenster von Hand schließen oder irgendeine Taste drücken.");
                 Console.ReadKey();
+            }
+            if (File.Exists(@".\serverInfo.xml"))
+            {
+                File.Delete(@".\serverInfo.xml");
             }
         }
 
@@ -170,6 +154,40 @@ namespace LS22ModAbgleich
             Array.Resize(ref fileContentBytes, fileContentBytes.Length + fileNameBytes.Length);
             Array.Copy(fileNameBytes, 0, fileContentBytes, fileContentBytes.Length - fileNameBytes.Length, fileNameBytes.Length);
             return string.Join(string.Empty, new MD5Cng().ComputeHash(fileContentBytes).Select(x => x.ToString("x2")));
+        }
+        private static void Download(List<String> modsToDownload)
+        {
+            using (WebClient webClient = new WebClient())
+            {
+                int downloadStep = 1;
+                foreach (var zipName in modsToDownload)
+                {
+                    try
+                    {
+                        Console.Write($"Lade herunter: {zipName}");
+                        string webPath = $"{modDownloadBase}/{zipName}";
+                        string localPath = $"{modPath}\\{zipName}";
+                        webClient.DownloadFile(webPath, localPath);
+                        Console.CursorLeft = 0;
+                        Console.Write(new string(' ', Console.WindowWidth - 1));
+                        Console.CursorLeft = 0;
+                        Console.Write($"Heruntergeladen: {zipName} ({downloadStep}/{modsToDownload.Count})");
+                        Console.WriteLine();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.CursorLeft = 0;
+                        Console.Write(new string(' ', Console.WindowWidth - 1));
+                        Console.CursorLeft = 0;
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write($"FEHLER: {zipName} ({downloadStep}/{modsToDownload.Count})");
+                        Console.ForegroundColor = defaultColor;
+                        Console.WriteLine();
+                    }
+
+                    downloadStep++;
+                }
+            }
         }
     }
 }

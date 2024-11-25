@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{E3851FCB-0F9A-4B9D-8CCE-022F47196589}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>LS22ModAbgleich</RootNamespace>
-    <AssemblyName>LS22ModAbgleich</AssemblyName>
+    <RootNamespace>LSModAbgleich</RootNamespace>
+    <AssemblyName>LSModAbgleich</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
